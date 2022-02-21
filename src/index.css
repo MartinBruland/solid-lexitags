@@ -1,0 +1,28 @@
+body, div, button, a, li, ul, ol, h1, h2, h3, p, main, header, section, input {
+
+  margin: 0;
+  padding: 0;
+  text-decoration: none;
+  list-style: none;
+  color: inherit;
+  font-family: sans-serif;
+  font-weight: bolder;
+}
+
+body {
+  background: #2f3542;
+  width: 100%;
+  min-height: 100vh;
+}
+
+p {
+  font-weight: 400;
+}
+
+#root {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  align-items: center;
+  width: 100%;
+}
