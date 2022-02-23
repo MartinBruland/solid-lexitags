@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 
 import {
   Tab,
@@ -8,16 +8,13 @@ import {
 
 import ReactWordcloud from 'react-wordcloud';
 
-import {
-  useSession,
-  SessionProvider
-} from "@inrupt/solid-ui-react";
+
 
 import {
   fetch,
   getDefaultSession,
-  onLogin,
-  handleIncomingRedirect
+  handleIncomingRedirect,
+  logout
 } from "@inrupt/solid-client-authn-browser";
 
 
@@ -71,8 +68,6 @@ function SolidApp() {
   const [selectedBookmark, setSelectedBookmark] = useState({ itemTags: [] });
 
   // SOLID POD BACKEND:
-  const { session, sessionRequestInProgress } = useSession();
-  
 
   const [podUser, updatePodUser] = useState({
     webID: getDefaultSession().info.webId,
@@ -116,9 +111,24 @@ function SolidApp() {
 
 
 
-  onLogin(async() => {
-    await finishLogin()
-  });
+
+
+
+  useEffect(() => {
+
+    handleIncomingRedirect({
+      restorePreviousSession: true,
+      onError: errorHandle,
+    }).then(async() => {
+      console.log(getDefaultSession().info.isLoggedIn)
+      await finishLogin()
+
+    });
+  }, [podUser.webID]); 
+
+  const errorHandle = (error, errorDescription) => {
+    console.log(`${error} has occured: `, errorDescription);
+  };
 
 
 
@@ -127,8 +137,8 @@ function SolidApp() {
 
 
 
-// B E N C H M A R K  -- T E S T I N G -- S E C T I O N //
-
+// B E N C H M A R K  -- T E S T I N G -- S E C T I O N //*
+/*
 // Triplestore
 function benchmarkTriplestore() {
 
@@ -154,7 +164,7 @@ function benchmarkSolidPods() {}
 
 
 
-
+*/
   
 
 
@@ -239,18 +249,18 @@ async function getAllWebIdFromLexitagsPOD() {
 
 
     // SET NECESSARY ACCESS PERMISSIONS ON DATASET.
-    access.getAccessForAll( podUser.podURL, "agent", {fetch: session.fetch} ) // GET ACCESS FOR DATASET.
+    access.getAccessForAll( podUser.podURL, "agent", {fetch: getDefaultSession().fetch} ) // GET ACCESS FOR DATASET.
     .then(response => console.log(response))
     .catch(async () => {  // CATCH ERROR -> 404 NOT FOUND -> NO ACL -> CREATE, SET, SAVE.
 
-      const myDatasetWithAcl = await getSolidDatasetWithAcl(podUser.podURL, {fetch: session.fetch});
+      const myDatasetWithAcl = await getSolidDatasetWithAcl(podUser.podURL, {fetch: getDefaultSession().fetch});
       const datasetWithAcl = createAclFromFallbackAcl(myDatasetWithAcl)
-      await saveAclFor(myDatasetWithAcl, datasetWithAcl, {fetch: session.fetch});
+      await saveAclFor(myDatasetWithAcl, datasetWithAcl, {fetch: getDefaultSession().fetch});
     
     })
     .finally(() => {  // SET PUBLIC ACCESS ON DATASET.
 
-      access.setPublicAccess( podUser.podURL, { read: true, append: true, write: true, controlRead: true, controlWrite: true }, { fetch: session.fetch } ).then(response => console.log(response))
+      access.setPublicAccess( podUser.podURL, { read: true, append: true, write: true, controlRead: true, controlWrite: true }, { fetch: getDefaultSession().fetch } ).then(response => console.log(response))
 
     })
     
@@ -583,19 +593,17 @@ async function getAllWebIdFromLexitagsPOD() {
 
   async function finishLogin() {
 
-    await handleIncomingRedirect();
-
-    if (session.info.isLoggedIn) {  // CHECK IF USER IS LOGGED IN.
+    if (getDefaultSession().info.isLoggedIn) {
 
       var podData = podUser;
-      podData.webID = session.info.webId;
-      podData.podURL = new URL( session.info.webId.split("/profile/card#me")[0] + "/lexitags/bookmarks" ).href;
-      podData.isLoggedIn = session.info.isLoggedIn;
+      podData.webID = getDefaultSession().info.webId;
+      podData.podURL = new URL( getDefaultSession().info.webId.split("/profile/card#me")[0] + "/lexitags/bookmarks" ).href;
+      podData.isLoggedIn = getDefaultSession().info.isLoggedIn;
 
       
 
 
-      const userDataset = await solidGet(session.info.webId)
+      const userDataset = await solidGet(getDefaultSession().info.webId)
       const profile = getThing(userDataset, podData.webID);
       const fn = getStringNoLocale(profile, 'http://www.w3.org/2006/vcard/ns#fn');
       podData.userName = fn;
@@ -623,9 +631,7 @@ async function getAllWebIdFromLexitagsPOD() {
       const topKTags = findTopKTags(allBookmarksFromUsers)
       updateTopKTags(topKTags)
 
-      
-    }
-  }
+  }}
 
 
   // LOAD NEW DATA.
@@ -710,6 +716,9 @@ async function getAllWebIdFromLexitagsPOD() {
   // BUTTON: LOGOUT.
   function logoutUser() {
 
+    // SOLID LOGOUT.
+    logout()
+
     // RESET STATES:
     var podUserData = podUser;
     podUserData.webID = "";
@@ -723,6 +732,7 @@ async function getAllWebIdFromLexitagsPOD() {
 
     setActiveFilter([]);
     setSelectedBookmark({ itemTags: [] });
+    
 
   }
 
@@ -1174,8 +1184,8 @@ async function getAllWebIdFromLexitagsPOD() {
 
 
   return (
-    
-      <SessionProvider sessionId={session.info.sessionId}>
+
+      <div id='application'>
 
         <header>
 
@@ -1188,17 +1198,17 @@ async function getAllWebIdFromLexitagsPOD() {
               value={value} 
               onChange={(e, x) => changeTabs(e, x)}
             >
-              <Tab label="Your Bookmarks" disabled={!session.info.isLoggedIn} />
-              <Tab label="Popular Bookmarks" disabled={!session.info.isLoggedIn} />
-              <Tab label="Tag Cloud" disabled={!session.info.isLoggedIn} />
+              <Tab label="Your Bookmarks" disabled={!getDefaultSession().info.isLoggedIn} />
+              <Tab label="Popular Bookmarks" disabled={!getDefaultSession().info.isLoggedIn} />
+              <Tab label="Tag Cloud" disabled={!getDefaultSession().info.isLoggedIn} />
             </Tabs>
 
             <ProfileMenu 
-              loggedin={session.info.isLoggedIn} 
+              loggedin={getDefaultSession().info.isLoggedIn} 
               webid={podUser.webID}
               nameOfUser={podUser.userName}
               value={value}
-              logoutFunc={logoutUser} 
+              logoutMethod={logoutUser} 
               showHelper={() => setHelpWindow(true)} 
               sortMethod1={() => updateDataObject(performSort('DATE', [...dataobject]))} 
               sortMethod2={() => updateDataObject(performSort('ALPHABETICAL', [...dataobject]))} 
@@ -1208,10 +1218,10 @@ async function getAllWebIdFromLexitagsPOD() {
 
         <main>
         
-        <TabView isLoggedIn={session.info.isLoggedIn} value={value} index={0} >
+        <TabView isLoggedIn={getDefaultSession().info.isLoggedIn} value={value} index={0} >
 
               <BookmarkActionBar 
-                isLoggedIn={session.info.isLoggedIn} 
+                isLoggedIn={getDefaultSession().info.isLoggedIn} 
                 tabValue={value} 
                 setBookmarkMethod={() => setInputWindow(true)} 
                 clickSearchbarMethod={clickSearchbar} 
@@ -1232,7 +1242,7 @@ async function getAllWebIdFromLexitagsPOD() {
 
         </TabView>
 
-        <TabView isLoggedIn={session.info.isLoggedIn} value={value} index={1} >
+        <TabView isLoggedIn={getDefaultSession().info.isLoggedIn} value={value} index={1} >
               {topKBookmarks.map((popItem) => (
                
                <BookmarkCardMedium 
@@ -1243,7 +1253,7 @@ async function getAllWebIdFromLexitagsPOD() {
         </TabView>
 
 
-        <TabView isLoggedIn={session.info.isLoggedIn} value={value} index={2} >
+        <TabView isLoggedIn={getDefaultSession().info.isLoggedIn} value={value} index={2} >
               
           <div className="tagCloudContainer">
 
@@ -1269,7 +1279,7 @@ async function getAllWebIdFromLexitagsPOD() {
         
 
         <LoginWindow 
-          isLoggedIn={session.info.isLoggedIn} 
+          isLoggedIn={getDefaultSession().info.isLoggedIn} 
         />
 
         <HelpWindow 
@@ -1293,7 +1303,7 @@ async function getAllWebIdFromLexitagsPOD() {
           cancelPost={() => setSelectedBookmark({itemTags: []})} 
         />
       
-    </SessionProvider>
+    </div>
 
   );
 }

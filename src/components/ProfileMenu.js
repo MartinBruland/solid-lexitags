@@ -4,9 +4,7 @@ import {
     Button
   } from "@material-ui/core";
 
-import {
-    LogoutButton
-  } from "@inrupt/solid-ui-react";
+
 
 
 
@@ -79,9 +77,9 @@ export function ProfileMenu(props) {
           
         <Button style={styleObj.button} color="primary" onClick={props.showHelper}>Help</Button>
 
-        <LogoutButton onError={function noRefCheck() {}} onLogout={props.logoutFunc}>  
-            <Button style={styleObj.button}  color="primary"> Logout </Button>               
-        </LogoutButton>
+
+        <Button style={styleObj.button} color="primary" onClick={(props.logoutMethod)}> Logout </Button>               
+
         
         
       </div>

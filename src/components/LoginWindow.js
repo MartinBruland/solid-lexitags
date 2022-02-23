@@ -4,10 +4,9 @@ import {
     Button
   } from "@material-ui/core";
 
-import {
-    LoginButton
-  } from "@inrupt/solid-ui-react";
-
+  import {
+    login
+  } from "@inrupt/solid-client-authn-browser";
 
 
 
@@ -58,27 +57,33 @@ export function LoginWindow(props) {
   }
 
 
+  const handleLogin = (e, podprovider) => {
+
+    e.preventDefault();
+
+    login({
+      redirectUrl: window.location.href,
+      oidcIssuer: podprovider,
+      clientName: "Lexitags"
+    });
+  };
+
+
+
+
+
     if (!props.isLoggedIn) {
         return (
           <div style={styleObj.container} >
             <h2 style={styleObj.headerText}>Login with Solid </h2>
             <p style={styleObj.paragraph}>Select Pod Provider</p>
             <div style={styleObj.buttonContainer}>
-              <LoginButton oidcIssuer="https://broker.pod.inrupt.com" redirectUrl={window.location.href}>
-                    <Button style={styleObj.button} color="primary"> Pod Spaces </Button>
-              </LoginButton>
-  
-                <LoginButton oidcIssuer="https://inrupt.net" redirectUrl={window.location.href}>
-                    <Button style={styleObj.button} color="primary"> Inrupt </Button>                
-                </LoginButton>
-  
-                <LoginButton oidcIssuer="https://solidcommunity.net" redirectUrl={window.location.href}>
-                    <Button style={styleObj.button} color="primary"> Solid Community </Button>
-                </LoginButton>
-  
-                <LoginButton oidcIssuer="https://localhost:8443/" redirectUrl={window.location.href}>
-                    <Button style={styleObj.button} color="primary"> NSS </Button>                
-                </LoginButton>
+
+              <Button style={styleObj.button} color="primary" onClick={(e) => handleLogin(e, 'https://broker.pod.inrupt.com')}> Pod Spaces </Button>
+              <Button style={styleObj.button} color="primary" onClick={(e) => handleLogin(e, 'https://inrupt.net')}> Inrupt </Button>
+              <Button style={styleObj.button} color="primary" onClick={(e) => handleLogin(e, 'https://solidcommunity.net')}> Solid Community </Button>
+              <Button style={styleObj.button} color="primary" onClick={(e) => handleLogin(e, 'https://localhost:8443/')}> NSS </Button>
+
               </div>
           </div>
         )
