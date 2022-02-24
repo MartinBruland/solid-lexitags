@@ -8,7 +8,7 @@ import {
 
 import ReactWordcloud from 'react-wordcloud';
 
-
+import axios from "axios";
 
 import {
   fetch,
@@ -105,6 +105,7 @@ function SolidApp() {
   const thingWord = 'http://schema.org/Thing/Word';
   const thingMeaning = 'http://schema.org/Thing/Meaning';
 
+  const thingTypeThing = 'http://schema.org/Thing';
   const thingTypeDataset = 'http://schema.org/Dataset';
   const thingTypeBookmark = 'http://schema.org/Bookmark';
   const thingTypeTag = 'http://schema.org/Tag';
@@ -137,35 +138,10 @@ function SolidApp() {
 
 
 
-// B E N C H M A R K  -- T E S T I N G -- S E C T I O N //*
-/*
-// Triplestore
-function benchmarkTriplestore() {
-
-  // Set timer.
-
-  // Create Query ?
-
-  // Call Endpoint
-
-  // Check data
-
-  // Preprocess data in same format as Lexitags.
-
-  // Print data.
-
-  // Check time.
-
-}
-
-// SOLD PODS
-function benchmarkSolidPods() {}
 
 
 
 
-*/
-  
 
 
 
@@ -277,8 +253,8 @@ async function getAllWebIdFromLexitagsPOD() {
     // ADD BOOKMARK TO DATASET.
     var bookmarkItem = {
       itemId: item.itemId,
-      itemType: thingTypeBookmark,
-      itemCreated: new Date().toLocaleString('en-US'),
+      itemType: thingTypeThing,
+      itemCreated: new Date().toISOString(),
       itemTitle: item.itemTitle,
       itemDescription: item.itemDescription,
       itemUrl: item.itemUrl,
@@ -352,7 +328,7 @@ async function getAllWebIdFromLexitagsPOD() {
     // ADD BOOKMARK TO DATASET.
     var bookmarkItem = {
       itemId: item.itemId,
-      itemModified: new Date().toLocaleString('en-US'),
+      itemModified: new Date().toISOString(),
       itemTitle: item.itemTitle,
       itemDescription: item.itemDescription,
       itemUrl: item.itemUrl,
@@ -440,145 +416,48 @@ async function getAllWebIdFromLexitagsPOD() {
 
 
 
-  async function validateDataset(savelocation) {
+  async function validateDataset(saveLocation) {
 
-    var retrievedData = [];
-    var shouldContinue = false;
-    var originalDataset;
-    var correctDataset;
+    var existingDataset;
     
-
-    await solidGet(savelocation).then( async (resx) => {
-
-    originalDataset = resx
-
-    const thing = getThingAll(originalDataset); // GET ALL THINGS FROM DATASET.
-
-    thing.forEach(item => { // ITERATE ALL THINGS.
+    await solidGet(saveLocation).then( async (resx) => {
       
-      const checkTypeBookmark = getUrl(item, thingType);
+      existingDataset = resx
 
-      // HANDLE IF OLD DATASET..:
-      if ( checkTypeBookmark === "http://schema.org/Thing") {
+      const thing = getThingAll(existingDataset); // GET ALL THINGS FROM DATASET.
+
+      thing.forEach(item => { // ITERATE ALL THINGS.
+
+        // HANDLE IF OLD DATASET..:
+        const checkTypeBookmark = getUrl(item, thingType);
         
-        shouldContinue = true;
+        if ( checkTypeBookmark === thingTypeBookmark) {
+          
+          const bookmarkIdentifier = getStringNoLocale(item, thingUrl);
+          const bookmarkCreated = new Date(getStringNoLocale(item, thingCreated)).toISOString();
+          const bookmarkModified = new Date(getStringNoLocale(item, thingModified)).toISOString();
+          
+          let newThing = buildThing(getThing( existingDataset, saveLocation + '#Bookmark/' + bookmarkIdentifier  ))  
+          .setUrl(thingType, 'http://schema.org/Thing')
+          .setStringNoLocale(thingCreated, bookmarkCreated)
+          .setStringNoLocale(thingModified, bookmarkModified)
+          .build();
+                    
+          existingDataset = setThing(existingDataset, newThing); 
+          
+        }
 
-        let bookmarkItem = {
-          itemId: getStringNoLocale(item, thingUrl),
-          itemTitle: getStringNoLocale(item, thingTitle),
-          itemDescription: getStringNoLocale(item, thingDescription),
-          itemUrl: getStringNoLocale(item, thingUrl),
-          itemCreated: getStringNoLocale(item, thingCreated) || '',
-          itemModified: getStringNoLocale(item, thingModified) || ''
-        };
+      });
 
-
-        // GET TAGS:
-        var listOfTags = [];
-
-        const allTagSubjects = getStringNoLocale(item, thingTags).split(',');
-
-        allTagSubjects.forEach((word)=> {
-
-          var formatedTag = (word[0].toUpperCase() + word.slice(1)).split(" ").join('-')
-
-          const tagItem = {
-            word: formatedTag,
-            meaning: 'wordnet',
-          }
-
-          listOfTags.push(tagItem)
-
-        })
-
-        bookmarkItem.itemTags = listOfTags;
-
-        retrievedData.push(bookmarkItem);              
-      }
-
-    });
+      existingDataset = await saveSolidDatasetAt( saveLocation, existingDataset, { fetch: fetch } );
     
-  
-
-
-    if (shouldContinue) {
-
-      var newDataset = await setupDataset(savelocation); // CREATE DATA TO POD.
-
-        retrievedData.forEach((item) => {
-
-          // ADD BOOKMARK TO DATASET.
-          var bookmarkItem = {
-            itemId: item.itemId,
-            itemType: thingTypeBookmark,
-            itemCreated: new Date().toLocaleString('en-US'),
-            itemTitle: item.itemTitle,
-            itemDescription: item.itemDescription,
-            itemUrl: item.itemUrl,
-            itemTags: item.itemTags
-          };
-              
-
-          // Build new thing and add to dataset
-          let newThing = buildThing(createThing({ url: savelocation + '#Bookmark/' + bookmarkItem.itemId  }))  
-          .addUrl(thingType, bookmarkItem.itemType)   
-          .addStringNoLocale(thingCreated, bookmarkItem.itemCreated)
-          .addStringNoLocale(thingTitle, bookmarkItem.itemTitle)
-          .addStringNoLocale(thingDescription, bookmarkItem.itemDescription)
-          .addStringNoLocale(thingUrl, bookmarkItem.itemUrl)
-          .build();
-          newDataset = setThing(newDataset, newThing);
-
-
-          // CONNECT BOOKMARK TO DATASET.
-          let newThingConnect = getThing(newDataset,  savelocation );
-          newThingConnect = buildThing(newThingConnect)
-          .addUrl('http://www.schema.org/Contains', savelocation + '#Bookmark/' + bookmarkItem.itemId   )
-          .build();
-          newDataset = setThing(newDataset, newThingConnect);
-
-
-          for (let tagCnt = 0; tagCnt < bookmarkItem.itemTags.length; tagCnt++) {
-
-            const tagWord = bookmarkItem.itemTags[tagCnt].word;
-            const tagMeaning = bookmarkItem.itemTags[tagCnt].meaning;
-            const tagId = 'Tag/' + tagWord
-
-            // ADD TAG TO DATASET.
-            const thing_tag = buildThing(createThing({ url: savelocation +'#' + tagId }))        
-            .addStringNoLocale(thingWord, tagWord)
-            .addStringNoLocale(thingMeaning, tagMeaning)
-            .addUrl(thingType, thingTypeTag)
-            .build();
-            newDataset = setThing(newDataset, thing_tag);
-
-            // CONNECT TAG TO BOOKMARK.
-            let thingTagConnect = getThing(newDataset,  savelocation + '#Bookmark/' + bookmarkItem.itemId   );
-            thingTagConnect = buildThing(thingTagConnect)
-            .addUrl(thingTags, savelocation + '#' + tagId)
-            .build();
-            newDataset = setThing(newDataset, thingTagConnect);
-
-          }
-
-        })
-        
-        correctDataset = await saveSolidDatasetAt( // Rebuilt dataset.
-          savelocation,
-          newDataset,
-          { fetch: fetch }
-        );
-
-    } else {
-      correctDataset = originalDataset // No changes.
-    }
   
   }).catch( async ()=> {
-    correctDataset = await setupDataset(podUser.podURL); // No existing dataset.
+    existingDataset = await setupDataset(podUser.podURL); // No existing dataset.
 
   });
 
-    return correctDataset
+    return existingDataset
   }
 
 
@@ -601,8 +480,6 @@ async function getAllWebIdFromLexitagsPOD() {
       podData.isLoggedIn = getDefaultSession().info.isLoggedIn;
 
       
-
-
       const userDataset = await solidGet(getDefaultSession().info.webId)
       const profile = getThing(userDataset, podData.webID);
       const fn = getStringNoLocale(profile, 'http://www.w3.org/2006/vcard/ns#fn');
@@ -669,15 +546,15 @@ async function getAllWebIdFromLexitagsPOD() {
       const checkTypeBookmark = getUrl(item, thingType);
 
       // HANDLE IF BOOKMARK:
-      if ( checkTypeBookmark === thingTypeBookmark) {
+      if ( checkTypeBookmark === 'http://schema.org/Thing') {
         
         let bookmarkItem = {
           itemId: item.url.split("#Bookmark/")[1],
           itemTitle: getStringNoLocale(item, thingTitle),
           itemDescription: getStringNoLocale(item, thingDescription),
           itemUrl: getStringNoLocale(item, thingUrl),
-          itemCreated: getStringNoLocale(item, thingCreated) || '',
-          itemModified: getStringNoLocale(item, thingModified) || ''
+          itemCreated: new Date(getStringNoLocale(item, thingCreated) || '').toLocaleString('en-US'),
+          itemModified: new Date(getStringNoLocale(item, thingModified) || '').toLocaleString('en-US'),
         };
 
 
@@ -1213,6 +1090,7 @@ async function getAllWebIdFromLexitagsPOD() {
               sortMethod1={() => updateDataObject(performSort('DATE', [...dataobject]))} 
               sortMethod2={() => updateDataObject(performSort('ALPHABETICAL', [...dataobject]))} 
             />
+
 
         </header>
 
