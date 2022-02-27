@@ -86,8 +86,7 @@ function SolidApp() {
   const [bookmarksByTag, updateBookmarksByTag] = useState([]);
 
 
-
-
+  axios.defaults.timeout = 0;
 
 
   
@@ -138,11 +137,295 @@ function SolidApp() {
 
 
 
+// B E N C H M A R K  -- T E S T I N G -- S E C T I O N //*
+
+async function performBenchmark() {
+
+    const t0 = performance.now(); // Set timer.
+    
+      // TRIPLESTORE:
+      //const response = await fetchFromTriplestore();
+      //const allItems = processTriplestore(response); // USED WITH 'QUERY'.
+      //const topK = processTopKItemsTriplestore(response) // USED WITH 'QUERYTOPK'.
+    
+      // SOLID PODS
+      const response = await fetchFromSolidPod();
+      const allItems = processSolidPod(response);
+      const topK = findTopKItemsSolidPod(allItems)
+
+
+      console.log(topK); // Print data
+
+    const t1 = performance.now(); // Set timer.
+
+    console.log(`Call to doSomething took ${t1 - t0} milliseconds.`); // Check time.
+}
+
+// Triplestore
+async function fetchFromTriplestore() {
+
+  const triplestoreEndpoint = `http://localhost:3001/api/get`
+  const numberOfPods = 100;
+  const dataset = 'bookmarks100';
+  const topKItems = 10;
+  //const dataset = 'bookmarks10';
+  //const dataset = 'bookmarks100';
+  //const dataset = 'bookmarks1000';
+  const specificUsername = 'user0';
+    
+  // Define Query:
+  const query = `
+  PREFIX type: <http://www.w3.org/1999/02/22-rdf-syntax-ns#type>
+  PREFIX container: <http://www.w3.org/ns/ldp#Container>
+  PREFIX contains: <http://www.w3.org/ns/ldp#contains>
+  PREFIX containsI: <http://www.schema.org/Contains>
+  PREFIX person: <http://schema.org/Person>
+  
+  SELECT ?subject ?predicate ?object
+    WHERE {
+      
+      {
+          SELECT *
+          WHERE {?webid type: person: . # GET ALL WEBIDS.
+          #FILTER regex(STR(?webid), ${specificUsername}) # CAN BE USED TO SELECT SPECIFIC USERS.
+          } LIMIT ${numberOfPods}
+      }
+        
+      #FIND DATASET LOCATION:
+      BIND (URI(REPLACE(STR(?webid), "/profile/card#me", "", "i")) AS ?podBase) # GET POD URL.
+      BIND (URI(CONCAT(STR(?podBase), "/public/${dataset}")) AS ?dataset) # GET DATASET URL.
+      
+      #RETRIEVE ALL SUBJECT, PREDICATE, OBJECT FROM DATASET:
+      ?dataset containsI: ?subject . # Lists all Items.
+          
+      { 
+        SELECT * 
+        WHERE {?subject ?predicate ?object .} 
+      }
+      
+    }
+  `;
+
+  const queryTopK = `
+  PREFIX type: <http://www.w3.org/1999/02/22-rdf-syntax-ns#type>
+  PREFIX container: <http://www.w3.org/ns/ldp#Container>
+  PREFIX contains: <http://www.w3.org/ns/ldp#contains>
+  PREFIX containsI: <http://www.schema.org/Contains>
+  PREFIX person: <http://schema.org/Person>
+  PREFIX url: <http://schema.org/Thing/url>
+
+  SELECT ?object ?objectCount
+    WHERE {
+          
+      { 
+      	SELECT ?object (count(?object) as?objectCount) 
+        WHERE {
+            
+            # SELECT AND FILTER WEBID'S:
+        	{ 
+           		SELECT *
+            	WHERE {
+                	?webid type: person: . # GET ALL WEBIDS.
+              		#FILTER regex(STR(?webid), ${specificUsername}) # CAN BE USED TO SELECT SPECIFIC USERS.
+				      } LIMIT ${numberOfPods}
+			    }
+        
+            #FIND DATASET LOCATION:
+            BIND (URI(REPLACE(STR(?webid), "/profile/card#me", "", "i")) AS ?podBase) # GET POD URL.
+            BIND (URI(CONCAT(STR(?podBase), "/public/${dataset}")) AS ?dataset) # GET DATASET URL.
+
+            #RETRIEVE ALL SUBJECT, PREDICATE, OBJECT FROM DATASET:
+            ?dataset containsI: ?subject . # Lists all Items. 
+            ?subject url: ?object .
+        
+        } GROUP BY ?object
+        
+      }
+      
+    }
+  GROUP BY ?bookmark ?object ?objectCount
+  ORDER BY DESC(?objectCount) 
+  LIMIT ${topKItems}
+  `;
+
+  // Call Endpoint
+  //const response = await axios.post(triplestoreEndpoint, {query: query} );
+
+  const response = await axios.post(triplestoreEndpoint, {query: queryTopK} );
+  
+  return response
+
+}
+
+
+// SOLD PODS
+async function fetchFromSolidPod() {
+
+  let output = [];
+  const numberOfPods = 10;
+
+  for (let index = 1; index <= numberOfPods; index++) {
+
+    // Define Locations:
+    const podBase = `https://user${index}.localhost:8443`;
+    const datasetLocation = podBase + '/public/bookmarks10';
+
+    // Call Endpoint
+    const response = await getSolidDataset(datasetLocation);
+    
+    output.push(response);
+    
+  }
+
+  return output
+
+}
+
+
+
+function processSolidPod(input) {
+
+  var output = [];
+
+  input.forEach((dataset) => {
+
+    // Extract data from response:
+    getThingAll(dataset).forEach(item => {
+
+      const checkTypeBookmark = getUrl(item, thingType);
+
+      if ( checkTypeBookmark === 'http://schema.org/Bookmark') {
+
+        const newItem = {
+          itemId: item.url,//.split("#Bookmark/")[1],  // Fjern splitt for å få unike items fra hver bruker..
+          itemTitle: getStringNoLocale(item, thingTitle),
+          itemDescription: getStringNoLocale(item, thingDescription),
+          itemUrl: getStringNoLocale(item, thingUrl),
+          itemCreated: new Date(getStringNoLocale(item, thingCreated) || '').toLocaleString('en-US'),
+          itemModified: new Date(getStringNoLocale(item, thingModified) || '').toLocaleString('en-US'),
+        };
+
+        output.push(newItem);              
+      }
+
+    });
+  })
+  
+  return output
+  
+}
+
+function processTriplestore(input) {
+
+  var output = [];
+
+  // Extract data from response:
+  input.data.forEach(item => {
+
+    if (item.subject) {
+      
+    const itemID = item.subject.value//.split('#Bookmark/')[1]; // Fjern splitt for å få unike items fra hver bruker..
+
+    // Check if ouput already contains itemID:
+    if (!output.some(e => e.itemId === itemID)) {
+
+      output.push({itemId: itemID})
+
+    }
+
+    const index = output.findIndex( ({ itemId }) => itemId === itemID );
+
+    switch (item.predicate.value) {
+      case thingTitle:
+        output[index].itemTitle = item.object.value;
+        break;
+      case thingDescription:
+        output[index].itemDescription = item.object.value;
+        break;
+      case thingUrl:
+        output[index].itemUrl = item.object.value;
+        break;
+      case thingCreated:
+        output[index].itemCreated = item.object.value;
+        break;
+      case thingModified:    
+        output[index].itemModified = item.object.value;
+        break;
+      default:
+        break;
+    }
+  }
+  })
+
+
+  return output
+
+}
+
+function processTopKItemsTriplestore(input) {
+
+  var output = [];
+
+  // Extract data from response:
+  input.data.forEach(item => {
+
+    if (item.object) {
+
+      const a = {
+        url: item.object.value,
+        count: item.objectCount.value
+      }
+      output.push(a)
+
+    }
+  })
+
+  return output
+
+}
 
 
 
 
 
+function findTopKItemsSolidPod(allBookmarks) {
+
+  var popularBookmarks = [];
+
+  allBookmarks.forEach((bookmarkItem)=> {
+        
+    var foundBookmark = false;
+
+    popularBookmarks.forEach((popularItem) => {
+    
+      if (popularItem.itemUrl === bookmarkItem.itemUrl) { // CHECK IF POPULAR BOOKMARKS CONTAIN BOOKMARK FROM DATASET.
+
+        foundBookmark = true;
+
+        popularItem.timesBookmarked += 1; // ADD +1 TO AMOUNT.
+      
+      }
+    }); 
+
+    if (!foundBookmark) {
+
+      const newBookmarkItem = {
+        itemUrl: bookmarkItem.itemUrl,
+        timesBookmarked: 1
+      }
+
+      popularBookmarks.push(newBookmarkItem);
+      
+    };
+
+  });
+
+  // SORT POPULAR BOOKMARKS BY TOP 10 HIGHEST NUMBER OF BOOKMARKS.
+  popularBookmarks = popularBookmarks.sort((firstItem, secondItem) => secondItem.timesBookmarked - firstItem.timesBookmarked).slice(0, 10);
+
+  return popularBookmarks
+
+}
 
 
 
@@ -1063,7 +1346,7 @@ async function getAllWebIdFromLexitagsPOD() {
   return (
 
       <div id='application'>
-
+            <button onClick={() => performBenchmark() }>Perform Benchmark</button>
         <header>
 
             <h2> Lexitags </h2>
