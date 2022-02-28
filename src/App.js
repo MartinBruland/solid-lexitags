@@ -124,7 +124,7 @@ function SolidApp() {
       await finishLogin()
 
     });
-  }, [podUser.webID]); 
+  }, [getDefaultSession().info.webId]); 
 
   const errorHandle = (error, errorDescription) => {
     console.log(`${error} has occured: `, errorDescription);
