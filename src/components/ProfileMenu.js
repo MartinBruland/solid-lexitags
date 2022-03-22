@@ -86,10 +86,9 @@ export function ProfileMenu(props) {
         <Button style={styleObj.button} color="primary" onClick={props.logoutMethod}> Logout </Button> 
 
         <Button style={styleObj.button} color="primary"> 
-        <FormGroup>
-          <FormControlLabel control={<Switch checked={props.optOutState} onChange={(event) => props.optOutMethod(event.target.checked)} />} label="use my data" />
-        </FormGroup>              
-        
+          <FormGroup>
+            <FormControlLabel control={<Switch checked={props.optOutState} onChange={(event) => props.optOutMethod(event.target.checked)} />} label="use my data" />
+          </FormGroup>              
         </Button> 
 
 

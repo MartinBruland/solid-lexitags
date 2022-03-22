@@ -18,7 +18,7 @@ export function BookmarkCardLarge(props) {
             color: 'black',
             padding: '5%',
             height: '200px',
-            width: '60%',
+            width: '100%',
             marginTop: '30px',
             border: 'solid 2px black'
         },

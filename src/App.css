@@ -23,8 +23,9 @@ main {
   flex-direction: column;
   justify-content: flex-start;
   align-items: center;
-  width: 80%;
-  padding: 2% 0%;
+  width: 100%;
+  padding: 2% 2%;
+  box-sizing: border-box;
 }
 
 #navigationbar {
@@ -67,6 +68,19 @@ text-decoration: underline;
 }
 
 
+@media (min-width: 800px) {
 
+  main {
+    width: 80%;
+  }
 
+}
 
+@media (min-width: 1000px) {
+
+  main {
+    width: 80%;
+    padding: 2% 15%;
+  }
+
+}

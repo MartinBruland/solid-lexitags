@@ -34,7 +34,7 @@ export function BookmarkActionBar(props) {
     },
     searchbar: {
       borderRadius: '14px',
-      width: '50%',
+      width: '100%',
       marginBottom: '30px',
       minHeight: '50px',
       background: '#3b424e',
