@@ -23,7 +23,7 @@ export function ProfileMenu(props) {
       profileContainer: {
         display: 'flex',
         flexDirection: 'row',
-        justifyContent: 'flex-start',
+        justifyContent: 'center',
         alignItems: 'center',
         border: 'solid 1.5px black',
         borderRadius: '25px',
@@ -31,6 +31,7 @@ export function ProfileMenu(props) {
         padding: '5px 15px',
         marginBottom: '4%',
         background: '#4c5f4a',
+        minWidth: '125px',
         maxWidth: '200px',
         overflow: 'hidden',
       },
