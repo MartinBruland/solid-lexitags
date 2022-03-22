@@ -71,7 +71,7 @@ function SolidApp() {
 
   const [podUser, updatePodUser] = useState({
     webID: getDefaultSession().info.webId,
-    podURL: "",
+    podURL: '',
     isLoggedIn: getDefaultSession().info.isLoggedIn,
     userName: ''
   });
@@ -80,6 +80,8 @@ function SolidApp() {
   const [dataset, updateDataset] = useState([]);
   const [dataobject, updateDataObject] = useState([]);
   
+
+  const [optOutState, updateoptOutState] = useState(true);
   const [allUsersBookmarks, updateAllUsersBookmarks] = useState([]);
   const [topKBookmarks, updateTopKBookmarks] = useState([]);
   const [topKTags, updateTopKTags] = useState([]);
@@ -112,6 +114,42 @@ function SolidApp() {
 
 
 
+  // Used to find the current state.
+  async function checkSocialDataPermissions() { 
+
+    const listOfUsers = await getAllWebIdFromLexitagsPOD()
+
+    if (listOfUsers.includes(podUser.webID)) {
+      updateoptOutState(true)
+    } else {
+      updateoptOutState(false)
+    }
+
+  }
+
+  function updateOpting(newValue) {
+
+    new Promise(async (resolve, reject) => {
+
+      if (newValue) {
+        await saveWebIdToLexitagsPOD()
+      } else {
+        await removeWebIdFromLexitagsPOD()
+      }
+      updateoptOutState(newValue)
+      resolve('Success!');
+    }).then(() => {      
+      reloadData()
+    })
+
+  }
+
+
+
+
+
+
+
 
 
   useEffect(() => {
@@ -120,7 +158,7 @@ function SolidApp() {
       restorePreviousSession: true,
       onError: errorHandle,
     }).then(async() => {
-      console.log(getDefaultSession().info.isLoggedIn)
+
       await finishLogin()
 
     });
@@ -135,7 +173,7 @@ function SolidApp() {
 
 
 
-
+/*
 
 // B E N C H M A R K  -- T E S T I N G -- S E C T I O N //*
 
@@ -448,6 +486,23 @@ function findTopKItemsSolidPod(allBookmarks) {
 
 }
 
+// SAVE WEBID OF USER TO FILE IN APPLICATION POD.
+async function removeWebIdFromLexitagsPOD() {
+  
+  const lexitagsPODURL = "https://lexitagspod.inrupt.net/appusers/datafile"; // LOCATION OF FILE IN APPLICATION POD.
+
+  const usersPODURL = lexitagsPODURL + '#' + podUser.webID;
+  
+  var existingDataset = await getSolidDataset(lexitagsPODURL); // GET DATASET FROM APPLICATION POD.
+  
+  const existingThing = getThing(existingDataset, usersPODURL); // GET THING FROM DATASET.
+
+  existingDataset = removeThing(existingDataset, existingThing); // REMOVE THING FROM DATASET.
+
+  await saveSolidDatasetAt( lexitagsPODURL, existingDataset );  
+
+}
+
 
 // GET WEBID'S OF ALL USERS.
 async function getAllWebIdFromLexitagsPOD() {
@@ -505,7 +560,8 @@ async function getAllWebIdFromLexitagsPOD() {
       newDataset,
       { fetch: fetch }
     );
-
+    
+    saveWebIdToLexitagsPOD() // STORE THE USERS WEBID IN APPLICATION-POD.
 
     // SET NECESSARY ACCESS PERMISSIONS ON DATASET.
     access.getAccessForAll( podUser.podURL, "agent", {fetch: getDefaultSession().fetch} ) // GET ACCESS FOR DATASET.
@@ -519,12 +575,10 @@ async function getAllWebIdFromLexitagsPOD() {
     })
     .finally(() => {  // SET PUBLIC ACCESS ON DATASET.
 
-      access.setPublicAccess( podUser.podURL, { read: true, append: true, write: true, controlRead: true, controlWrite: true }, { fetch: getDefaultSession().fetch } ).then(response => console.log(response))
+      access.setPublicAccess( podUser.podURL, { read: true, append: false, write: false, controlRead: false, controlWrite: false }, { fetch: getDefaultSession().fetch } ).then(response => console.log(response))
 
     })
     
-    saveWebIdToLexitagsPOD() // STORE THE USERS WEBID IN APPLICATION-POD.
-
     return savedSolidDataset;
   }
 
@@ -703,42 +757,15 @@ async function getAllWebIdFromLexitagsPOD() {
 
     var existingDataset;
     
-    await solidGet(saveLocation).then( async (resx) => {
+    await solidGet(saveLocation).then((response) => {
       
-      existingDataset = resx
+      existingDataset = response;
 
-      const thing = getThingAll(existingDataset); // GET ALL THINGS FROM DATASET.
+    }).catch( async ()=> {
 
-      thing.forEach(item => { // ITERATE ALL THINGS.
+      existingDataset = await setupDataset(podUser.podURL); // No existing dataset.
 
-        // HANDLE IF OLD DATASET..:
-        const checkTypeBookmark = getUrl(item, thingType);
-        
-        if ( checkTypeBookmark === thingTypeBookmark) {
-          
-          const bookmarkIdentifier = getStringNoLocale(item, thingUrl);
-          const bookmarkCreated = new Date(getStringNoLocale(item, thingCreated)).toISOString();
-          const bookmarkModified = new Date(getStringNoLocale(item, thingModified)).toISOString();
-          
-          let newThing = buildThing(getThing( existingDataset, saveLocation + '#Bookmark/' + bookmarkIdentifier  ))  
-          .setUrl(thingType, 'http://schema.org/Thing')
-          .setStringNoLocale(thingCreated, bookmarkCreated)
-          .setStringNoLocale(thingModified, bookmarkModified)
-          .build();
-                    
-          existingDataset = setThing(existingDataset, newThing); 
-          
-        }
-
-      });
-
-      existingDataset = await saveSolidDatasetAt( saveLocation, existingDataset, { fetch: fetch } );
-    
-  
-  }).catch( async ()=> {
-    existingDataset = await setupDataset(podUser.podURL); // No existing dataset.
-
-  });
+    });
 
     return existingDataset
   }
@@ -772,24 +799,17 @@ async function getAllWebIdFromLexitagsPOD() {
 
       var data = await validateDataset(podUser.podURL)
 
-    
       updateDataset(data); // UPDATE DATASET IN STATE.
       const dataobj = preprocessDataset(data); // RETRIEVE DATA FROM DATASET.  
       updateDataObject(dataobj) //UPDATE RETRIEVED DATA IN STATE.
 
 
+      
 
 
+      reloadData();
 
-
-      const allBookmarksFromUsers = await getAllUsersBookmarks()
-      updateAllUsersBookmarks(allBookmarksFromUsers)
-
-      const topKBookmarks = findTopKBookmarks(allBookmarksFromUsers) // GET POPULAR BOOKMARKS.
-      updateTopKBookmarks(topKBookmarks)
-
-      const topKTags = findTopKTags(allBookmarksFromUsers)
-      updateTopKTags(topKTags)
+      checkSocialDataPermissions();
 
   }}
 
@@ -797,15 +817,19 @@ async function getAllWebIdFromLexitagsPOD() {
   // LOAD NEW DATA.
   async function reloadData() {
 
-    const allBookmarksFromUsers = await getAllUsersBookmarks()
-    updateAllUsersBookmarks(allBookmarksFromUsers)
+    await getAllUsersBookmarks().then((allBookmarksFromUsers) => {
 
-    const topKBookmarks = findTopKBookmarks(allBookmarksFromUsers) // GET POPULAR BOOKMARKS.
-    updateTopKBookmarks(topKBookmarks)
+      updateBookmarksByTag([])
 
-    const topKTags = findTopKTags(allBookmarksFromUsers)
-    updateTopKTags(topKTags)
+      updateAllUsersBookmarks(allBookmarksFromUsers)
 
+      const topKBookmarks = findTopKBookmarks(allBookmarksFromUsers) // Find TopK Bookmarks.
+      const topKTags = findTopKTags(allBookmarksFromUsers) // Find TopK Tags.
+
+      updateTopKBookmarks(topKBookmarks)
+      updateTopKTags(topKTags)
+      
+    });
   }
 
 
@@ -881,11 +905,13 @@ async function getAllWebIdFromLexitagsPOD() {
 
     // RESET STATES:
     var podUserData = podUser;
-    podUserData.webID = "";
-    podUserData.podURL = "";
-    podUserData.isLoggedIn = false;
+    podUserData.webID = getDefaultSession().info.webId;
+    podUserData.podURL = '';
+    podUserData.isLoggedIn = getDefaultSession().info.isLoggedIn;
     podUserData.userName = '';
     updatePodUser(podUserData);
+
+
 
     updateDataset([]);
     updateDataObject([]);
@@ -1342,11 +1368,11 @@ async function getAllWebIdFromLexitagsPOD() {
 
 
 
-
+  //<button onClick={() => performBenchmark() }>Perform Benchmark</button>
   return (
 
       <div id='application'>
-            <button onClick={() => performBenchmark() }>Perform Benchmark</button>
+           
         <header>
 
             <h2> Lexitags </h2>
@@ -1369,9 +1395,12 @@ async function getAllWebIdFromLexitagsPOD() {
               nameOfUser={podUser.userName}
               value={value}
               logoutMethod={logoutUser} 
+              optOutState ={optOutState}
               showHelper={() => setHelpWindow(true)} 
               sortMethod1={() => updateDataObject(performSort('DATE', [...dataobject]))} 
               sortMethod2={() => updateDataObject(performSort('ALPHABETICAL', [...dataobject]))} 
+              optOutMethod={updateOpting}
+              
             />
 
 

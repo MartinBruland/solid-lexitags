@@ -1,7 +1,10 @@
 import React from "react";
 
 import {
-    Button
+    Button,
+    Switch,
+    FormGroup,
+    FormControlLabel
   } from "@material-ui/core";
 
 
@@ -62,6 +65,8 @@ export function ProfileMenu(props) {
       document.getElementById('buttonContainer').style.display = 'none'
     }
 
+
+
     if (props.loggedin) {
     return (
 
@@ -78,7 +83,15 @@ export function ProfileMenu(props) {
         <Button style={styleObj.button} color="primary" onClick={props.showHelper}>Help</Button>
 
 
-        <Button style={styleObj.button} color="primary" onClick={(props.logoutMethod)}> Logout </Button>               
+        <Button style={styleObj.button} color="primary" onClick={props.logoutMethod}> Logout </Button> 
+
+        <Button style={styleObj.button} color="primary"> 
+        <FormGroup>
+          <FormControlLabel control={<Switch checked={props.optOutState} onChange={(event) => props.optOutMethod(event.target.checked)} />} label="use my data" />
+        </FormGroup>              
+        
+        </Button> 
+
 
         
         
