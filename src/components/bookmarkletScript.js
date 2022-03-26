@@ -42,7 +42,12 @@ function bookmarkletCode() {
     }
 
 
+
+
+
+
     var userInterface = document.createElement('div');
+    userInterface.id = 'lexitagsView'
     userInterface.style.position = 'fixed';
     userInterface.style.top = '10%';
     userInterface.style.left = '30%';
@@ -123,18 +128,13 @@ function bookmarkletCode() {
     userInterface.appendChild(label1Container);
     userInterface.appendChild(label2Container);
     userInterface.appendChild(label3Container);
-
     userInterface.appendChild(button2);
+
     document.body.appendChild(userInterface);
 
 
 
-
     // button actions
-    function localAddTag() {};
-
-    function localremoveTag() {};
-
     function localPostBookmark() {
 
         const datasetLocation = 'https://martinclone.inrupt.net/lexitags/bookmarks';
@@ -152,24 +152,10 @@ function bookmarkletCode() {
 
         const queries = [queryx, query1, query2, query3, query4, query5, query6];
 
-
-        fetch(datasetLocation, {
-          method: 'POST',
-          cache: 'cache',
-          credentials: 'include',
-          headers: {
-              'Content-Type': 'application/sparql-update'
-          },
-          body: 'query'
-      })
-
         queries.forEach(query => {
 
-            fetch(datasetLocation, {
+            window.fetch(datasetLocation, {
                 method: 'PATCH',
-                mode: 'cors', 
-                cache: 'cache',
-                credentials: 'include',
                 headers: {
                     'Content-Type': 'application/sparql-update'
                 },
@@ -177,9 +163,14 @@ function bookmarkletCode() {
             })
         });
 
-
+        // Hide viwe:
+        const a = document.getElementById('lexitagsView')
+        a.remove()
 
     }
+
+
+
 
 
 }
