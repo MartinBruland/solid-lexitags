@@ -16,6 +16,7 @@ function bookmarkletCode() {
 
     const thingTypeDataset = 'http://schema.org/Dataset';
     const thingTypeBookmark = 'http://schema.org/Bookmark';
+    const thingTypeThing = 'http://schema.org/Thing'
     const thingTypeTag = 'http://schema.org/Tag';
 
 
@@ -33,7 +34,6 @@ function bookmarkletCode() {
         itemTitle: document.title,
         itemUrl: window.location.href,
         itemDescription: webpageDesc,
-        itemTags: 'asd',
         itemCreated: new Date().toISOString()
     }
 
@@ -139,14 +139,14 @@ function bookmarkletCode() {
 
         const queryx = `INSERT { <${datasetLocation}> <http://www.schema.org/Contains> ${itemSubj} . }`;
 
-        const query1 = `INSERT { ${itemSubj} <${thingType}> <${thingTypeBookmark}> . }`;
+        const query1 = `INSERT { ${itemSubj} <${thingType}> <${thingTypeThing}> . }`;
         const query2 = `INSERT { ${itemSubj} <${thingCreated}> "${bookmarkItem.itemCreated}" . }`;
         const query3 = `INSERT { ${itemSubj} <${thingTitle}> "${bookmarkItem.itemTitle}" . }`;
         const query4 = `INSERT { ${itemSubj} <${thingDescription}> "${bookmarkItem.itemDescription}" . }`;
         const query5 = `INSERT { ${itemSubj} <${thingUrl}> "${bookmarkItem.itemUrl}" . }`;
-        const query6 = `INSERT { ${itemSubj} <${thingTags}> "${bookmarkItem.itemTags}" . }`;
 
-        const queries = [queryx, query1, query2, query3, query4, query5, query6];
+
+        const queries = [queryx, query1, query2, query3, query4, query5];
 
         queries.forEach(query => {
 
