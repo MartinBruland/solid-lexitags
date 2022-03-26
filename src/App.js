@@ -114,6 +114,10 @@ function SolidApp() {
 
 
 
+
+
+
+
   // Used to find the current state.
   async function checkSocialDataPermissions() { 
 
@@ -1475,6 +1479,7 @@ async function getAllWebIdFromLexitagsPOD() {
         <HelpWindow 
           open={helpWindow} 
           onClose={() => setHelpWindow(false)} 
+          lexitagsBookmarklet={podUser.podURL}
         />
 
         <WordnetWindow 

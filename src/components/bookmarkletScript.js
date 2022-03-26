@@ -1,23 +1,17 @@
+
 function bookmarkletCode() {
 
     // PREFIX
     const thingType = 'http://www.w3.org/1999/02/22-rdf-syntax-ns#type';
 
     const thingCreated = 'http://schema.org/dateCreated';
-    const thingModified = 'http://schema.org/dateModified';
 
     const thingTitle = 'http://schema.org/Thing/alternateName';
     const thingDescription = 'http://schema.org/Thing/description';
     const thingUrl = 'http://schema.org/Thing/url';
-    const thingTags = 'http://schema.org/Thing/disambiguationDescription';
 
-    const thingWord = 'http://schema.org/Thing/Word';
-    const thingMeaning = 'http://schema.org/Thing/Meaning';
+    const thingTypeThing = 'http://schema.org/Thing';
 
-    const thingTypeDataset = 'http://schema.org/Dataset';
-    const thingTypeBookmark = 'http://schema.org/Bookmark';
-    const thingTypeThing = 'http://schema.org/Thing'
-    const thingTypeTag = 'http://schema.org/Tag';
 
 
 
@@ -26,7 +20,7 @@ function bookmarkletCode() {
         webpageDesc = webpageDesc.getAttribute('content');
     } else {
         webpageDesc = '';
-    }
+    };
 
 
     var bookmarkItem = {
@@ -35,7 +29,7 @@ function bookmarkletCode() {
         itemUrl: window.location.href,
         itemDescription: webpageDesc,
         itemCreated: new Date().toISOString()
-    }
+    };
 
 
 
@@ -160,8 +154,8 @@ function bookmarkletCode() {
         });
 
         // Hide viwe:
-        const a = document.getElementById('lexitagsView')
-        a.remove()
+        const a = document.getElementById('lexitagsView');
+        a.remove();
 
     }
 
