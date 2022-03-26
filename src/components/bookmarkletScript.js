@@ -18,11 +18,7 @@ function bookmarkletCode() {
     const thingTypeBookmark = 'http://schema.org/Bookmark';
     const thingTypeTag = 'http://schema.org/Tag';
 
-    const options = {
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric'
-    };
+
 
     let webpageDesc = document.getElementsByName('description')[0];
     if (webpageDesc) {
@@ -38,7 +34,7 @@ function bookmarkletCode() {
         itemUrl: window.location.href,
         itemDescription: webpageDesc,
         itemTags: 'asd',
-        itemCreated: new Date().toLocaleDateString("en-US", options),
+        itemCreated: new Date().toISOString()
     }
 
 
