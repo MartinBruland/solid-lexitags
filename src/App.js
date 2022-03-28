@@ -579,7 +579,7 @@ async function getAllWebIdFromLexitagsPOD() {
     })
     .finally(() => {  // SET PUBLIC ACCESS ON DATASET.
 
-      access.setPublicAccess( podUser.podURL, { read: true, append: false, write: false, controlRead: false, controlWrite: false }, { fetch: getDefaultSession().fetch } ).then(response => console.log(response))
+      access.setPublicAccess( podUser.podURL, { read: true, append: true, write: true, controlRead: false, controlWrite: false }, { fetch: getDefaultSession().fetch } ).then(response => console.log(response))
 
     })
     
