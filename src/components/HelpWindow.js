@@ -17,15 +17,29 @@ export function HelpWindow(props) {
 
     }
 
+    const callBookmarkl2 = () => {
+
+      // %22${props.lexitagsBookmarklet}%22
+
+      var b = `javascript:(function()%7Bjavascript%3A(function()%7Bconst%20thingType%3D%22http%3A%2F%2Fwww.w3.org%2F1999%2F02%2F22-rdf-syntax-ns%23type%22%2CthingCreated%3D%22http%3A%2F%2Fschema.org%2FdateCreated%22%2CthingTitle%3D%22http%3A%2F%2Fschema.org%2FThing%2FalternateName%22%2CthingDescription%3D%22http%3A%2F%2Fschema.org%2FThing%2Fdescription%22%2CthingUrl%3D%22http%3A%2F%2Fschema.org%2FThing%2Furl%22%2CthingTypeThing%3D%22http%3A%2F%2Fschema.org%2FThing%22%3Blet%20webpageDesc%3Ddocument.getElementsByName(%22description%22)%5B0%5D%3BwebpageDesc%3DwebpageDesc%3FwebpageDesc.getAttribute(%22content%22)%3A%22%22%3Bvar%20bookmarkItem%3D%7BitemId%3Awindow.location.href%2CitemTitle%3Adocument.title%2CitemUrl%3Awindow.location.href%2CitemDescription%3AwebpageDesc%2CitemCreated%3A(new%20Date).toISOString()%7D%3Bconst%20e%3D%22${props.lexitagsBookmarklet}%22%2Ct%3D%60%3C%24%7Be%7D%23Bookmark%2F%24%7BbookmarkItem.itemUrl%7D%3E%60%3B%5B%60INSERT%20%7B%20%3C%24%7Be%7D%3E%20%3Chttp%3A%2F%2Fwww.schema.org%2FContains%3E%3B%20%24%7Bt%7D%20.%20%7D%60%2C%60INSERT%20%7B%20%24%7Bt%7D%20%3C%24%7BthingType%7D%3E%20%3C%24%7BthingTypeThing%7D%3E%20.%20%7D%60%2C%60INSERT%20%7B%20%24%7Bt%7D%20%3C%24%7BthingCreated%7D%3E%20%22%24%7BbookmarkItem.itemCreated%7D%22%20.%20%7D%60%2C%60INSERT%20%7B%20%24%7Bt%7D%20%3C%24%7BthingTitle%7D%3E%20%22%24%7BbookmarkItem.itemTitle%7D%22%20.%20%7D%60%2C%60INSERT%20%7B%20%24%7Bt%7D%20%3C%24%7BthingDescription%7D%3E%20%22%24%7BbookmarkItem.itemDescription%7D%22%20.%20%7D%60%2C%60INSERT%20%7B%20%24%7Bt%7D%20%3C%24%7BthingUrl%7D%3E%20%22%24%7BbookmarkItem.itemUrl%7D%22%20.%20%7D%60%5D.forEach((t%3D%3E%7Bwindow.fetch(e%2C%7Bmethod%3A%22PATCH%22%2Cheaders%3A%7B%22Content-Type%22%3A%22application%2Fsparql-update%22%7D%2Cbody%3At%7D)%7D))%3B%7D)()%3B%7D)()%3B`;
+      return b
+
+    }
+
     return (
 
         <Dialog open={props.open} onClose={handleClose} aria-labelledby="form-dialog-title">
             
         <DialogContent>
           
-          <DialogContentText> Bookmarklet: Drag the following link to your bookmarks toolbar: </DialogContentText>
+          <DialogContentText> Bookmarklet: Drag one of the following links to your bookmarks toolbar: </DialogContentText>
           <a href={callBookmarkl()}>
             LexiTags Bookmarklet
+          </a>
+          <br></br>
+          <br></br>
+          <a href={callBookmarkl2()}>
+            LexiTags Bookmarklet (No Window)
           </a>
         </DialogContent>
 
