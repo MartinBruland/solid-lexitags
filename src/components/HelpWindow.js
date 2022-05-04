@@ -8,6 +8,7 @@ export function HelpWindow(props) {
         props.onClose(props.selectedValue);  // Updating Window State in App.js.
     };
 
+    // With window (unfinished)
     const callBookmarkl = () => {
 
       // %22${props.lexitagsBookmarklet}%22
@@ -33,14 +34,9 @@ export function HelpWindow(props) {
         <DialogContent>
           
           <DialogContentText> Bookmarklet: Drag one of the following links to your bookmarks toolbar: </DialogContentText>
-          <a href={callBookmarkl()}>
-            LexiTags Bookmarklet
-          </a>
-          <br></br>
-          <br></br>
-          <a href={callBookmarkl2()}>
-            LexiTags Bookmarklet (No Window)
-          </a>
+            <a href={callBookmarkl2()}>
+              LexiTags Bookmarklet (No Window)
+            </a>
         </DialogContent>
 
       </Dialog>

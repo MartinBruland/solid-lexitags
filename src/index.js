@@ -8,7 +8,6 @@ import SolidApp from './App';
 
 
 ReactDOM.render(
-
     <SolidApp />,
       document.getElementById('root')
 );
