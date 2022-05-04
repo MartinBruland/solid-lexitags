@@ -1,11 +1,14 @@
 # Solid-Lexitags
 
 
-# To install packages:
-npm install
+## How To Use
+1. Install packages: npm install
+2. Run locally: npm start
 
-# To run: 
-npm start
+-------------------------------------------
+
+
+
 
 
 
